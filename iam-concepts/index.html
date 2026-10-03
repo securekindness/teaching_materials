@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IAM Concepts Across Okta, Entra and AWS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single-column field guide with jump nav. Palette: crimson accent on parchment, ink text, mortar neutrals. */
+:root {
+  --bg: #f3f3f1;
+  --surface: #ffffff;
+  --ink: #1e1e1e;
+  --muted: #5e5852;
+  --line: #dcd7d0;
+  --accent: #a51c30;
+  --accent-soft: #f6e8ea;
+  --head-bg: #a51c30;
+  --head-fg: #ffffff;
+  --warn: #7a5300;
+  --warn-soft: #f6efdc;
+  --chip-bg: #ebe8e3;
+  --diagram-fill: #ffffff;
+  --display: "Crimson Pro", Georgia, "Times New Roman", serif;
+  --body: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161314; --surface: #211c1d; --ink: #efebe7; --muted: #b3aba4; --line: #3b3233;
+    --accent: #e57a89; --accent-soft: #3a1d22; --head-bg: #7d1626; --head-fg: #ffffff;
+    --warn: #e6b65a; --warn-soft: #33281a; --chip-bg: #2c2526; --diagram-fill: #262021;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161314; --surface: #211c1d; --ink: #efebe7; --muted: #b3aba4; --line: #3b3233;
+  --accent: #e57a89; --accent-soft: #3a1d22; --head-bg: #7d1626; --head-fg: #ffffff;
+  --warn: #e6b65a; --warn-soft: #33281a; --chip-bg: #2c2526; --diagram-fill: #262021;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 72px; display: grid; gap: 40px; }
+header { display: grid; gap: 12px; border-top: 6px solid var(--head-bg); padding-top: 22px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 4.4vw, 44px); line-height: 1.08; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 600; font-size: clamp(22px, 2.8vw, 28px); line-height: 1.15; margin: 0; text-wrap: balance; }
+h3 { font-size: 16px; font-weight: 700; margin: 0; line-height: 1.3; }
+.lede { max-width: 72ch; color: var(--muted); margin: 0; font-size: 16px; }
+nav.jump { display: flex; flex-wrap: wrap; gap: 8px; }
+nav.jump a { font: 500 13px/1 var(--body); color: var(--ink); text-decoration: none; background: var(--chip-bg); border: 1px solid var(--line); padding: 8px 12px; border-radius: 999px; }
+nav.jump a:hover { border-color: var(--accent); }
+a:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 18px; scroll-margin-top: 16px; }
+.sec-head { display: grid; gap: 6px; }
+.sec-head p { margin: 0; color: var(--muted); max-width: 72ch; }
+.sec-num { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; }
+
+/* Four questions */
+.questions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.q { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.q .k { font-family: var(--mono); font-size: 12px; color: var(--accent); letter-spacing: .04em; }
+.q b { font-size: 16px; }
+.q span { font-size: 14px; color: var(--muted); }
+
+/* Vocabulary */
+.vocab { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.term { padding: 14px 16px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); display: grid; gap: 4px; align-content: start; min-width: 0; }
+.term:nth-child(3n) { border-right: 0; }
+.term .name { font-weight: 700; }
+.term .abbr { font-family: var(--mono); font-size: 12px; color: var(--accent); margin-left: 6px; font-weight: 500; }
+.term p { margin: 0; font-size: 14px; }
+.term .draw { font-size: 12.5px; color: var(--muted); }
+.term .draw::before { content: "Draw: "; font-family: var(--mono); color: var(--accent); }
+
+/* Standards */
+.stds { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.std-row { display: grid; grid-template-columns: 200px minmax(0, 1fr) 280px; gap: 18px; padding: 14px 16px; border-top: 1px solid var(--line); align-items: start; }
+.std-row:first-child { border-top: 0; }
+.std-row p { margin: 0; font-size: 14px; }
+.sn b { display: block; font-family: var(--mono); font-weight: 500; font-size: 16px; color: var(--accent); }
+.sn span { font-size: 12.5px; color: var(--muted); }
+.su { font-size: 13px; display: grid; grid-template-columns: max-content 1fr; gap: 3px 10px; }
+.su span { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.related { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.related div { font-size: 13px; background: var(--chip-bg); border-radius: 6px; padding: 10px 12px; min-width: 0; }
+.related b { display: block; font-family: var(--mono); font-weight: 500; color: var(--accent); }
+@media (max-width: 960px) { .std-row { grid-template-columns: 1fr; gap: 8px; } .related { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .related { grid-template-columns: 1fr; } }
+
+/* Crypto */
+.crypto { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.cc { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.cc p { margin: 0; font-size: 14px; }
+.cc .iam { font-size: 13px; background: var(--accent-soft); border-radius: 6px; padding: 8px 10px; }
+.cc .iam b { display: block; font-family: var(--mono); font-weight: 500; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); }
+@media (max-width: 960px) { .crypto { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .crypto { grid-template-columns: 1fr; } }
+
+/* Diagram */
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
+.figure .scroll { overflow-x: auto; }
+.figure svg { display: block; min-width: 760px; width: 100%; height: auto; }
+.figure .cap { font-size: 13px; color: var(--muted); margin: 0; }
+svg .box { fill: var(--diagram-fill); stroke: var(--ink); stroke-width: 1.4; }
+svg .ext { fill: var(--diagram-fill); stroke: var(--muted); stroke-width: 1.4; }
+svg .bound { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-dasharray: 7 5; }
+svg .t1 { fill: var(--ink); font: 600 14px var(--body); }
+svg .t2 { fill: var(--muted); font: 400 11.5px var(--mono); }
+svg .tb { fill: var(--accent); font: 500 12px var(--mono); }
+svg .ar { stroke: var(--ink); stroke-width: 1.4; fill: none; marker-end: url(#arr); }
+svg .ar.dash { stroke-dasharray: 4 4; }
+svg .lab { fill: var(--ink); font: 500 11.5px var(--mono); }
+svg .labbg { fill: var(--surface); }
+svg #arr path { fill: var(--ink); }
+.notation { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.notation div { font-size: 13px; background: var(--chip-bg); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+.notation b { display: block; font-size: 12px; font-family: var(--mono); font-weight: 500; color: var(--accent); }
+
+/* Patterns */
+.patterns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.pat .std { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.pat .use { font-size: 14px; margin: 0; }
+.pat ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; font-size: 14px; }
+.pat ol li::marker { font-family: var(--mono); color: var(--accent); font-size: 12px; }
+.pat .c { font-weight: 600; }
+.pat .watch { font-size: 13px; background: var(--warn-soft); color: var(--ink); border-radius: 6px; padding: 8px 10px; }
+.pat .watch b { color: var(--warn); font-family: var(--mono); font-weight: 500; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; display: block; }
+
+/* Naming table */
+.same { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.same div { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; font-size: 14px; min-width: 0; }
+.same b { display: block; margin-bottom: 2px; }
+.tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+#q { font: 400 14px var(--body); padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); width: min(340px, 100%); }
+.count { font-size: 13px; color: var(--muted); }
+.matrix { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.thead, .row { display: grid; grid-template-columns: 1fr 1.05fr 1.15fr 1.15fr 1.2fr; }
+.thead { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--head-bg); }
+.thead div { padding: 10px 14px; color: var(--head-fg); font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.row { border-top: 1px solid var(--line); }
+.row > div { padding: 12px 14px; font-size: 14px; min-width: 0; }
+.row > div + div { border-left: 1px solid var(--line); }
+.row .gen b { display: block; font-size: 15px; }
+.row .gen span { font-size: 13px; color: var(--muted); }
+.row .diff { background: var(--accent-soft); font-size: 13.5px; }
+.vlbl { display: none; }
+.empty { padding: 24px 14px; color: var(--muted); }
+
+/* Takeaways */
+.take { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; counter-reset: t; }
+.take div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 4px; min-width: 0; }
+.take b { font-size: 15.5px; }
+.take span { font-size: 14px; color: var(--muted); }
+.foot { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+@media (max-width: 960px) {
+  .questions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vocab { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .term:nth-child(3n) { border-right: 1px solid var(--line); }
+  .term:nth-child(2n) { border-right: 0; }
+  .patterns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .notation { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .thead { display: none; }
+  .row { grid-template-columns: 1fr; }
+  .row > div + div { border-left: 0; border-top: 1px dashed var(--line); }
+  .vlbl { display: block; font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+}
+@media (max-width: 620px) {
+  .questions, .vocab, .patterns, .same, .take { grid-template-columns: 1fr; }
+  .term { border-right: 0 !important; }
+}
+</style>
+<style>[hidden]{display:none!important} img{max-width:100%} body{margin:0}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Identity and access management · reference sheet</div>
+    <h1>IAM Concepts Across Okta, Entra and AWS</h1>
+    <p class="lede">A working vocabulary for drawing identity into logical architecture diagrams, the patterns that recur in every modern system, and how three major ecosystems name and implement the same ideas.</p>
+    <nav class="jump" aria-label="Sections">
+      <a href="#vocabulary">Vocabulary</a>
+      <a href="#standards">Standards</a>
+      <a href="#crypto">Cryptography</a>
+      <a href="#diagram">Reference diagram</a>
+      <a href="#patterns">Patterns</a>
+      <a href="#naming">Across ecosystems</a>
+      <a href="#takeaways">Takeaways</a>
+    </nav>
+  </header>
+
+  <section aria-label="Four questions">
+    <div class="questions">
+      <div class="q"><span class="k">Authentication</span><b>Who are you?</b><span>Prove an identity with credentials and factors.</span></div>
+      <div class="q"><span class="k">Authorization</span><b>What may you do?</b><span>Decide which actions on which resources are allowed.</span></div>
+      <div class="q"><span class="k">Enforcement</span><b>Where is it checked?</b><span>The point in the system that blocks or allows the request.</span></div>
+      <div class="q"><span class="k">Accountability</span><b>What happened?</b><span>Evidence of who did what, when, and under which authority.</span></div>
+    </div>
+  </section>
+
+  <section id="vocabulary">
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <h2>Conceptual Vocabulary for Logical Diagrams</h2>
+      <p>Consider using some of these vendor-neutral labels on components and arrows.</p>
+    </div>
+    <div class="vocab" id="vocab"></div>
+  </section>
+
+  <section id="standards">
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <h2>Standards that carry across ecosystems</h2>
+      <p>Open specifications every major identity platform implements. Learn these once and they apply wherever you work.</p>
+    </div>
+    <div class="stds">
+      <div class="std-row"><div class="sn"><b>OAuth 2.0</b><span>Authorization framework</span></div><p>Lets a client obtain a scoped, time-limited access token to call an API on a user's or its own behalf, without handling the user's password. It grants access; on its own it does not say who the user is.</p><div class="su"><span>Answers</span>What may this client do?<span>Seen in</span>API access, partner integrations, consent screens</div></div>
+      <div class="std-row"><div class="sn"><b>OIDC</b><span>OpenID Connect</span></div><p>An identity layer built on OAuth 2.0. Adds an ID token that tells the application who signed in, how and when.</p><div class="su"><span>Answers</span>Who is this user?<span>Seen in</span>Modern web and mobile sign-in, "Sign in with" buttons</div></div>
+      <div class="std-row"><div class="sn"><b>SAML 2.0</b><span>Security Assertion Markup Language</span></div><p>An XML-based federation standard. The IdP sends a signed assertion through the user's browser to the service provider, which then grants a session.</p><div class="su"><span>Answers</span>Who is this user?<span>Seen in</span>Enterprise single sign-on into SaaS applications</div></div>
+      <div class="std-row"><div class="sn"><b>SCIM 2.0</b><span>System for Cross-domain Identity Management</span></div><p>A REST API standard for creating, updating and deactivating user accounts and groups across systems, so applications stay in step with the source of truth.</p><div class="su"><span>Answers</span>Should this account exist, and with what attributes?<span>Seen in</span>Joiner, mover, leaver and rejoiner provisioning</div></div>
+      <div class="std-row"><div class="sn"><b>FIDO2</b><span>WebAuthn + CTAP</span></div><p>Public-key authentication where the private key stays on the user's device and only works for the site it was registered to, which makes it resistant to phishing. Passkeys are FIDO credentials that can sync across a person's devices.</p><div class="su"><span>Answers</span>Is this really the user?<span>Seen in</span>Passwordless sign-in, phishing-resistant MFA, security keys</div></div>
+    </div>
+    <div class="related">
+      <div><b>JWT</b>JSON Web Token: compact, signed token format used for ID tokens and many access tokens.</div>
+      <div><b>PKCE</b>Proof Key for Code Exchange: protects the OAuth sign-in code from interception; required for browser and mobile apps.</div>
+      <div><b>mTLS</b>Mutual TLS: both sides present certificates, giving strong client authentication for APIs.</div>
+      <div><b>LDAP and Kerberos</b>Older directory and sign-in protocols behind Active Directory; still common on premises.</div>
+    </div>
+  </section>
+
+  <section id="crypto">
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <h2>Cryptographic building blocks</h2>
+      <p>Identity systems rest on a small set of cryptographic tools. Each card says what the tool does and where it appears in IAM.</p>
+    </div>
+    <div class="crypto">
+      <div class="cc"><h3>Hashing</h3><p>A one-way fingerprint of data. The same input always gives the same output, and the input cannot be recovered from it.</p><div class="iam"><b>In IAM</b>Passwords are stored as salted, deliberately slow hashes (bcrypt, scrypt, Argon2) so a stolen database does not reveal them.</div></div>
+      <div class="cc"><h3>Symmetric encryption</h3><p>One shared key both encrypts and decrypts. Fast and suited to large volumes of data (AES is the common standard).</p><div class="iam"><b>In IAM</b>Protects stored data and the bulk traffic inside a TLS connection. The hard part is sharing and protecting the key.</div></div>
+      <div class="cc"><h3>Public-key cryptography</h3><p>A key pair: the public key can be shared with anyone, the private key never leaves its owner. What one key does, only the other can undo (RSA, elliptic curve).</p><div class="iam"><b>In IAM</b>Underpins signatures, certificates, TLS key exchange and FIDO2 passkeys.</div></div>
+      <div class="cc"><h3>Digital signature</h3><p>The private key signs; anyone with the public key can verify. Proves who created the data and that it was not altered. It does not hide the contents.</p><div class="iam"><b>In IAM</b>SAML assertions and JWTs are signed by the IdP. The relying party must verify the signature before trusting any claim.</div></div>
+      <div class="cc"><h3>MAC and HMAC</h3><p>An integrity check using a shared secret key. Proves the sender knew the key and the message was not changed.</p><div class="iam"><b>In IAM</b>AWS request signing (SigV4) uses HMAC. Some tokens and webhooks are protected the same way.</div></div>
+      <div class="cc"><h3>Certificates and PKI</h3><p>A certificate binds a public key to a name and is signed by a certificate authority. Trust flows down a chain from a root; certificates expire and can be revoked.</p><div class="iam"><b>In IAM</b>TLS server identity, mTLS client authentication, SAML signing certificates, smart cards and device trust.</div></div>
+      <div class="cc"><h3>TLS and mTLS</h3><p>TLS encrypts a connection and proves the server's identity with its certificate. Mutual TLS also requires a client certificate.</p><div class="iam"><b>In IAM</b>Every token and credential travels inside TLS. mTLS gives APIs strong machine-to-machine authentication.</div></div>
+      <div class="cc"><h3>Key management</h3><p>Generating, storing, rotating and retiring keys. Key management services and hardware security modules (HSMs) keep keys from ever leaving protected hardware.</p><div class="iam"><b>In IAM</b>IdPs rotate token signing keys and publish the public halves at a JWKS endpoint so apps can verify tokens.</div></div>
+      <div class="cc"><h3>Envelope encryption</h3><p>Data is encrypted with a data key, and the data key is encrypted with a master key held in a KMS or HSM.</p><div class="iam"><b>In IAM</b>Access to the master key becomes an authorization decision: whoever can call decrypt can read the data.</div></div>
+    </div>
+    <div class="related">
+      <div><b>Encoding is not encryption</b>Base64 makes data portable; anyone can decode it. A JWT's body is only encoded.</div>
+      <div><b>Hashing is not encryption</b>Encryption is reversible with the key; hashing is designed to be irreversible.</div>
+      <div><b>Signed is not secret</b>A signed token proves origin and integrity; its contents remain readable.</div>
+      <div><b>Keys are the asset</b>Encryption is only as strong as control over who can use the key.</div>
+    </div>
+  </section>
+
+  <section id="diagram">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <h2>Reference diagram</h2>
+      <p>A minimal product showing where identity components sit and how credentials travel.</p>
+    </div>
+    <div class="figure">
+      <div class="scroll">
+        <svg viewBox="0 0 960 400" role="img" aria-label="Reference logical diagram: a user signs in through an identity provider; the web app calls an API with an access token; a partner calls through an API gateway with client credentials; the API checks a policy engine, reads a data store with a workload role, and writes to an audit log, all inside a dashed trust boundary.">
+          <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker></defs>
+
+          <rect class="bound" x="185" y="118" width="760" height="270" rx="10"/>
+          <text class="tb" x="200" y="140">trust boundary · your product</text>
+
+          <rect class="ext" x="20" y="168" width="120" height="54" rx="6"/>
+          <text class="t1" x="80" y="192" text-anchor="middle">User</text>
+          <text class="t2" x="80" y="210" text-anchor="middle">principal · browser</text>
+
+          <rect class="ext" x="20" y="300" width="120" height="54" rx="6"/>
+          <text class="t1" x="80" y="324" text-anchor="middle">Partner</text>
+          <text class="t2" x="80" y="342" text-anchor="middle">API client</text>
+
+          <rect class="ext" x="375" y="18" width="220" height="58" rx="6"/>
+          <text class="t1" x="485" y="43" text-anchor="middle">Identity provider</text>
+          <text class="t2" x="485" y="62" text-anchor="middle">IdP · authorization server</text>
+
+          <rect class="box" x="215" y="168" width="160" height="58" rx="6"/>
+          <text class="t1" x="295" y="192" text-anchor="middle">Web app</text>
+          <text class="t2" x="295" y="211" text-anchor="middle">relying party · PEP</text>
+
+          <rect class="box" x="215" y="300" width="160" height="58" rx="6"/>
+          <text class="t1" x="295" y="324" text-anchor="middle">API gateway</text>
+          <text class="t2" x="295" y="343" text-anchor="middle">PEP · rate limits</text>
+
+          <rect class="box" x="470" y="232" width="170" height="58" rx="6"/>
+          <text class="t1" x="555" y="256" text-anchor="middle">API service</text>
+          <text class="t2" x="555" y="275" text-anchor="middle">resource server · PEP</text>
+
+          <rect class="box" x="470" y="322" width="170" height="50" rx="6"/>
+          <text class="t1" x="555" y="345" text-anchor="middle">Policy engine</text>
+          <text class="t2" x="555" y="362" text-anchor="middle">PDP</text>
+
+          <path class="box" d="M745,168 a60,10 0 0,0 120,0 a60,10 0 0,0 -120,0 v56 a60,10 0 0,0 120,0 v-56"/>
+          <text class="t1" x="805" y="207" text-anchor="middle">Data store</text>
+
+          <rect class="box" x="745" y="300" width="160" height="58" rx="6"/>
+          <text class="t1" x="825" y="324" text-anchor="middle">Audit log</text>
+          <text class="t2" x="825" y="343" text-anchor="middle">append-only</text>
+
+          <line class="ar" x1="140" y1="195" x2="213" y2="195"/>
+          <rect class="labbg" x="146" y="172" width="58" height="16"/><text class="lab" x="175" y="184" text-anchor="middle">sign in</text>
+
+          <line class="ar" x1="320" y1="166" x2="420" y2="79"/>
+          <line class="ar" x1="445" y1="79" x2="345" y2="166"/>
+          <rect class="labbg" x="372" y="110" width="166" height="16"/><text class="lab" x="455" y="122" text-anchor="middle">OIDC redirect · tokens</text>
+
+          <line class="ar" x1="375" y1="210" x2="468" y2="250"/>
+          <rect class="labbg" x="378" y="212" width="86" height="16"/><text class="lab" x="421" y="224" text-anchor="middle">access token</text>
+
+          <line class="ar" x1="140" y1="327" x2="213" y2="327"/>
+          <rect class="labbg" x="132" y="358" width="130" height="16"/><text class="lab" x="197" y="370" text-anchor="middle">client credentials</text>
+
+          <line class="ar" x1="375" y1="320" x2="468" y2="278"/>
+
+          <line class="ar" x1="555" y1="290" x2="555" y2="320"/>
+          <rect class="labbg" x="562" y="297" width="52" height="16"/><text class="lab" x="588" y="309" text-anchor="middle">allow?</text>
+
+          <line class="ar" x1="640" y1="250" x2="743" y2="210"/>
+          <rect class="labbg" x="650" y="218" width="94" height="16"/><text class="lab" x="697" y="230" text-anchor="middle">workload role</text>
+
+          <line class="ar dash" x1="640" y1="280" x2="743" y2="318"/>
+          <rect class="labbg" x="664" y="284" width="50" height="16"/><text class="lab" x="689" y="296" text-anchor="middle">events</text>
+        </svg>
+      </div>
+      <div class="notation">
+        <div><b>Solid box</b>Component you build or operate</div>
+        <div><b>Grey box</b>External party or service you trust</div>
+        <div><b>Dashed boundary</b>Trust changes when crossed</div>
+        <div><b>Labeled arrow</b>Name the credential or token it carries</div>
+      </div>
+      <p class="cap">Every arrow that crosses a boundary should name what proves identity on that hop.</p>
+    </div>
+  </section>
+
+  <section id="patterns">
+    <div class="sec-head">
+      <span class="sec-num">05</span>
+      <h2>Recurring identity patterns</h2>
+      <p>Most systems combine a handful of these. Each step names the components from the vocabulary above.</p>
+    </div>
+    <div class="patterns" id="pats"></div>
+  </section>
+
+  <section id="naming">
+    <div class="sec-head">
+      <span class="sec-num">06</span>
+      <h2>Same concept, different names</h2>
+      <p>Okta and Microsoft Entra are identity providers first. AWS IAM is an authorization engine for cloud resources first, and usually receives people from an external IdP.</p>
+    </div>
+    <div class="same">
+      <div><b>Shared standards underneath</b>All three speak OAuth 2.0, OIDC, SAML 2.0, SCIM and FIDO2. Product names differ; protocols carry over.</div>
+      <div><b>Shared building blocks</b>Each has a tenant boundary, a directory, groups, policies, MFA, short-lived credentials, machine identities and an audit log.</div>
+      <div><b>Different defaults</b>Policy evaluation, what "role" means and where sign-in rules live differ most. Check those first when moving between platforms.</div>
+    </div>
+    <div class="tools"><input id="q" type="search" placeholder="Search, e.g. role, SCIM, managed identity" aria-label="Search naming table"><span class="count" id="count"></span></div>
+    <div class="matrix">
+      <div class="thead"><div>Concept</div><div>Okta</div><div>Microsoft Entra / Azure</div><div>AWS</div><div>Key difference</div></div>
+      <div id="rows"></div>
+    </div>
+  </section>
+
+  <section id="takeaways">
+    <div class="sec-head">
+      <span class="sec-num">07</span>
+      <h2>Takeaways that outlast any product</h2>
+    </div>
+    <div class="take" id="take"></div>
+  </section>
+
+  <p class="foot">Product names reflect vendor documentation as of fall 2026. Feature availability often depends on license tier.</p>
+</div>
+
+<script>
+const VOCAB = [
+  ["Principal", "", "Any entity that can be authenticated and granted access: a person, a service, a device, a workload.", "Actors outside or inside the boundary, labeled by type"],
+  ["Identity provider", "IdP", "Authenticates principals and issues assertions or tokens other systems trust.", "Its own component, usually external, with login and token arrows"],
+  ["Relying party / service provider", "RP / SP", "An application that accepts the IdP's assertion instead of checking credentials itself.", "The app box receiving the token arrow"],
+  ["Directory", "", "Store of identities and attributes: users, groups, devices, service accounts.", "Data store attached to the IdP"],
+  ["Federation", "", "A trust relationship letting one domain accept identities asserted by another.", "Trust arrow between two IdPs or between IdP and app"],
+  ["Authorization server", "AS", "Issues OAuth access tokens after checking who is asking and what they may request.", "Often the same box as the IdP; label both roles"],
+  ["Resource server", "", "An API or service that holds protected data and accepts access tokens.", "Your API box, with token validation noted"],
+  ["Client", "", "Software requesting access: a web app, mobile app, partner integration or script.", "The caller at the tail of a token arrow"],
+  ["Token", "", "Signed, time-limited proof. ID token says who; access token says what may be called; refresh token renews.", "Label on arrows, never as a component"],
+  ["Scope and claim", "", "Scope: a permission a client requests. Claim: a statement inside a token, such as user ID, tenant or role.", "Note key scopes or claims on the token arrow"],
+  ["Policy decision point", "PDP", "Evaluates rules and returns allow or deny.", "Policy engine box, or a note on the service"],
+  ["Policy enforcement point", "PEP", "Intercepts the request and applies the decision: gateway, middleware, database check.", "Mark every place a request can be refused"],
+  ["Trust boundary", "", "Line where the level of trust changes: network, tenant, privilege or ownership.", "Dashed outline; every crossing needs an authentication note"],
+  ["Assertion", "", "Signed statement from an IdP about an authenticated principal. SAML calls it an assertion; OIDC carries the same idea in an ID token.", "Label on the federation arrow"],
+  ["Delegation", "", "One party acts for another with both identities preserved: the user as subject, the acting party as actor.", "Arrow labeled with both identities, e.g. \"user via support\""],
+  ["Impersonation", "", "An actor assumes another identity completely, so downstream systems see only the impersonated user.", "Mark as a privileged path with its own approval and log"],
+  ["Session", "","State that remembers a completed authentication for a period of time.", "Note duration and where it is stored"],
+  ["Entitlement", "", "A specific granted permission: a role assignment, group membership or policy grant.", "Annotate high-risk entitlements on admin paths"],
+  ["Workload identity", "", "Identity issued by the platform to running software, so no secret is stored in code.", "Label on service-to-resource arrows"],
+  ["Secrets store", "", "Vault for credentials that cannot be eliminated: keys, certificates, passwords.", "Data store accessed only by named workloads"],
+  ["Audit log", "", "Append-only record of authentication, authorization and administrative events.", "Destination outside the reach of the admins it records"]
+];
+
+const PATS = [
+  { n: "Federated sign-in (SSO)", s: "SAML 2.0 · OIDC", u: "A person signs in once at an IdP and reaches many applications.",
+    steps: ["<span class='c'>User</span> opens the <span class='c'>RP</span>", "RP redirects the browser to the <span class='c'>IdP</span>", "IdP authenticates, including MFA", "IdP returns a signed assertion or ID token", "RP validates it and starts a session"],
+    w: "RP skips checks on signature, audience or expiry, so a forged or replayed assertion is accepted." },
+  { n: "Delegated API access", s: "OAuth 2.0 authorization code + PKCE", u: "An app calls an API with the user's permission, limited by scope.",
+    steps: ["<span class='c'>Client</span> sends user to the <span class='c'>authorization server</span>", "User authenticates and consents to scopes", "Client exchanges a one-time code for tokens", "Client calls the <span class='c'>resource server</span> with the access token", "Resource server validates token and scopes"],
+    w: "Overly broad scopes, or tokens kept in browser storage where scripts can read them." },
+  { n: "Machine-to-machine", s: "OAuth 2.0 client credentials · mTLS", u: "A service or partner calls an API with no user involved.",
+    steps: ["<span class='c'>Client</span> authenticates with its own credential", "<span class='c'>Authorization server</span> issues a scoped access token", "Client calls the API through a <span class='c'>PEP</span>", "API checks scope, tenant and rate limits"],
+    w: "Shared secrets pasted into code or config. Prefer signed key assertions or certificates." },
+  { n: "Workload identity federation", s: "OIDC token exchange · cloud STS", u: "A pipeline, container or VM gets cloud access without stored keys.",
+    steps: ["Platform issues the <span class='c'>workload</span> a signed identity token", "Workload presents it to the cloud's token service", "Trust policy checks issuer, subject and audience", "Token service returns short-lived credentials"],
+    w: "Trust condition too loose, such as any repository or any branch being allowed to assume the role." },
+  { n: "Delegation (acting on behalf of)", s: "OAuth token exchange · on-behalf-of", u: "A service or support agent acts for a user while both identities stay visible to policy and logs.",
+    steps: ["Front service receives the user's token", "It exchanges that token for one aimed at the downstream API", "New token names the user as subject and the service or agent as actor", "Downstream authorizes on both and logs both"],
+    w: "Original user lost in the chain, so logs show only the service account." },
+  { n: "Impersonation", s: "\"Log in as user\" · support sessions", u: "An actor takes on a user's identity so systems see only the user. Common in support tools; use sparingly.",
+    steps: ["Support agent opens a ticket and requests access to a named account", "Customer consent or approver sign-off is recorded", "A time-limited session is issued, read-only by default", "The user sees a banner or notice that support is in the account", "A separate log entry ties every action to the agent who started the session"],
+    w: "Actions recorded as the user's own, so audit can no longer separate what the customer did from what support did. Prefer delegation where the product allows it." },
+  { n: "Step-up authentication", s: "acr / amr claims · re-authentication", u: "A normal session is enough to browse; sensitive actions require stronger proof.",
+    steps: ["User with an active session requests a sensitive action", "<span class='c'>PEP</span> checks how the session was authenticated", "If too weak, user re-authenticates with a stronger factor", "Action proceeds and is logged with the factor used"],
+    w: "Step-up enforced in the interface only, so a direct API call skips it." },
+  { n: "Just-in-time privilege", s: "Time-bound elevation · approval", u: "Administrators hold no standing power; they request it for a task.",
+    steps: ["Admin requests a privileged role with a reason", "Approver or policy grants it", "Role is active for a fixed window", "Access expires automatically; every step is logged"],
+    w: "Emergency exceptions that become permanent standing access." },
+  { n: "Lifecycle provisioning", s: "SCIM 2.0 · joiners, movers, leavers, rejoiners", u: "Accounts follow the source of truth (HR system or customer IdP) through every stage, with the <span class='c'>IdP</span> pushing each change to apps over SCIM.",
+    steps: ["<span class='c'>Joiner:</span> account created with the standard access for the role", "<span class='c'>Mover:</span> access for the new role added, access from the old role removed", "<span class='c'>Leaver:</span> account disabled, sessions and tokens revoked, owned resources reassigned", "<span class='c'>Rejoiner:</span> prior identity matched to avoid a duplicate, access granted fresh for the current role", "Periodic review confirms access still fits"],
+    w: "Movers who keep old access as they gain new (privilege creep), leavers whose API tokens survive deactivation, and rejoiners reactivated with their old entitlements." },
+  { n: "Break-glass access", s: "Emergency accounts", u: "Administrators can still get in when the IdP, MFA service or federation fails.",
+    steps: ["A small number of emergency accounts exist outside normal dependencies", "Credentials are held under dual control", "Any use triggers an immediate alert", "After use, credentials are rotated and the event reviewed"],
+    w: "Break-glass accounts that depend on the same IdP or MFA service they are meant to bypass." }
+];
+
+const ROWS = [
+  { c:"Identity boundary", h:"Top-level container for identities and policy",
+    o:"Okta org", e:"Entra tenant; Azure subscriptions attach to it", a:"AWS account, grouped in an AWS Organization",
+    d:"Azure separates the identity tenant from resource subscriptions. AWS combines identity and resources inside each account." },
+  { c:"Directory", h:"Where people and attributes live",
+    o:"Universal Directory", e:"Entra ID", a:"IAM Identity Center identity store; IAM users for legacy cases",
+    d:"AWS usually sources people from an external IdP. IAM users carry long-lived keys and are discouraged for humans." },
+  { c:"Customer identity (CIAM)", h:"Your product's external users",
+    o:"Auth0", e:"Entra External ID", a:"Amazon Cognito user pools",
+    d:"All three run customer identity as a product separate from workforce identity, with different admin models and pricing." },
+  { c:"Application object", h:"How an app is registered for sign-in",
+    o:"App integration (SAML or OIDC)", e:"App registration (global definition) plus enterprise application / service principal (instance in each tenant)", a:"Cognito app client; for AWS console access, a permission set",
+    d:"Entra's two-object model surprises newcomers: one definition, one service principal per tenant that uses it." },
+  { c:"Federation direction", h:"Who vouches for whom",
+    o:"Commonly the IdP; also accepts inbound IdPs", e:"Commonly the IdP; B2B federation accepts partner IdPs", a:"Usually the service provider: Identity Center or IAM trusts an external IdP",
+    d:"In a mixed environment, Okta or Entra typically signs people in and AWS trusts that assertion." },
+  { c:"Groups", h:"Collections used to grant access",
+    o:"Groups and group rules", e:"Security groups, dynamic groups, Microsoft 365 groups", a:"Identity Center groups; IAM groups",
+    d:"An IAM group attaches policies to users but cannot be named as a principal in a policy." },
+  { c:"Role", h:"Most overloaded word in IAM",
+    o:"Admin roles govern Okta administration; app roles travel as claims", e:"Three kinds: Entra roles (directory admin), Azure roles (resource RBAC), app roles (claims in tokens)", a:"IAM role is an identity a principal assumes to receive temporary credentials",
+    d:"In AWS a role is something you become. In Okta and Azure a role is something you are assigned." },
+  { c:"Permission definition", h:"How allowed actions are expressed",
+    o:"Admin role permissions over resource sets; app policy configured in console", e:"Role definitions (actions, data actions) assigned at a scope", a:"JSON policy documents: effect, action, resource, condition",
+    d:"AWS policies are written as code and attached. Azure role definitions are assigned to a principal at a scope." },
+  { c:"Policy evaluation", h:"How a final answer is reached",
+    o:"Policy rules evaluated in priority order; first match applies", e:"Azure RBAC is additive across assignments; deny assignments are rare and system-managed", a:"Default deny; explicit deny overrides any allow; organization policies and permission boundaries cap the maximum",
+    d:"Ordered rules, union of grants, and deny-wins produce different results from similar-looking configurations." },
+  { c:"Sign-in policy", h:"Context rules applied at authentication",
+    o:"Global session policy and app authentication policies", e:"Conditional Access", a:"No central sign-in policy; IAM condition keys plus whatever the IdP enforces",
+    d:"For AWS, device and location rules are usually set at the upstream IdP." },
+  { c:"MFA and authenticators", h:"Second factors and passwordless",
+    o:"Okta Verify, FastPass, FIDO2 / WebAuthn", e:"Microsoft Authenticator, passkeys, FIDO2, Windows Hello for Business; authentication strengths", a:"MFA devices on root and IAM users; Identity Center MFA; Cognito MFA",
+    d:"Entra's authentication strengths let a policy demand a phishing-resistant method by name." },
+  { c:"Credentials issued", h:"What a signed-in principal carries",
+    o:"OIDC and OAuth tokens from org or custom authorization servers", e:"Tokens from the Microsoft identity platform", a:"STS temporary credentials used to sign each request (SigV4)",
+    d:"OAuth tokens are bearer credentials sent with each call. AWS keys sign the request and the secret never crosses the wire." },
+  { c:"Protecting your own API", h:"Issuing scopes for an API you build",
+    o:"Custom authorization server with scopes and claims", e:"App registration that exposes an API with scopes and app roles", a:"Cognito resource servers; API Gateway authorizers",
+    d:"Okta and Entra mint tokens for your API. AWS commonly validates tokens at the gateway." },
+  { c:"Machine identity", h:"Identity for running software",
+    o:"Service app using client credentials", e:"Managed identity; service principal; workload identity federation", a:"IAM role attached to compute (instance profile, execution role, Pod Identity); IAM Roles Anywhere",
+    d:"Managed identities and attached roles need no stored secret. Okta service apps hold a key you must protect." },
+  { c:"Privileged access", h:"Elevated rights, ideally time-bound",
+    o:"Scoped admin roles; Okta Privileged Access; access requests", e:"Privileged Identity Management (PIM) for Entra and Azure roles", a:"Permission sets; role assumption gated by MFA conditions; organization guardrail policies",
+    d:"Entra offers built-in just-in-time activation. AWS achieves it through role design and add-on tooling." },
+  { c:"Delegation and impersonation", h:"Acting for another identity",
+    o:"OAuth token exchange for delegation; Auth0 has no built-in user impersonation", e:"On-behalf-of flow for delegation; Temporary Access Pass lets an admin issue a sign-in code for a user, a path to govern as privileged", a:"Assuming a role takes on its permissions; sts:SourceIdentity and session tags keep the original person in CloudTrail",
+    d:"None of the three offers one-click \"log in as user\" for workforce accounts. Customer-facing impersonation is usually built inside the application." },
+  { c:"Key and secret management", h:"Where keys and secrets live",
+    o:"Okta manages and rotates token signing keys, publishing them at a JWKS endpoint; Okta Privileged Access vaults secrets", e:"Azure Key Vault and Managed HSM; Entra publishes signing keys in its OpenID metadata", a:"AWS KMS, CloudHSM and Secrets Manager",
+    d:"Okta is an identity service and offers no general-purpose key store. Azure and AWS both provide HSM-backed key management services." },
+  { c:"Certificates", h:"Binding public keys to names",
+    o:"SAML signing certificates per app; certificates for device trust", e:"Certificate-based authentication for users; certificates as app credentials", a:"AWS Certificate Manager for TLS; AWS Private CA; IAM Roles Anywhere trusts X.509 certificates",
+    d:"All three use certificates for federation signing. Azure and AWS also issue and manage certificates as a service." },
+  { c:"Provisioning", h:"Joiners, movers, leavers, rejoiners",
+    o:"Lifecycle Management pushes over SCIM", e:"Provisioning service pushes over SCIM; Lifecycle Workflows", a:"Identity Center receives SCIM from an external IdP",
+    d:"Okta and Entra are usually the sender. AWS is usually the receiver." },
+  { c:"Access review", h:"Confirming access still fits",
+    o:"Okta Identity Governance certifications", e:"Access Reviews in Entra ID Governance", a:"IAM Access Analyzer unused-access findings; last-accessed data",
+    d:"Okta and Entra certify people's access. AWS emphasizes evidence of unused permissions." },
+  { c:"Audit log", h:"Record of identity activity",
+    o:"System Log", e:"Sign-in, audit and provisioning logs", a:"CloudTrail",
+    d:"Default retention is short in all three. Export to a separate store for investigations and evidence." }
+];
+
+const TAKE = [
+  ["Authenticate centrally, authorize close to the data", "The IdP proves who someone is. Each service still decides what that identity may do with the specific resource."],
+  ["Prefer short-lived, platform-issued credentials", "Temporary tokens and workload identities shrink the value of anything stolen."],
+  ["Require phishing-resistant MFA where privilege lives", "Passkeys and security keys for admins, support staff and anyone who can change security settings."],
+  ["Make recovery as strong as login", "A password reset or support override that skips MFA becomes the real front door."],
+  ["Separate the admin plane", "Administrative and support access gets its own entry point, its own policy and its own logs."],
+  ["Default to deny and grant narrowly", "Start from no access, add the least that works, and review it on a schedule."],
+  ["Keep both identities when one party acts for another", "Logs should show who acted and on whose behalf."],
+  ["Log decisions, never secrets", "Record who, what, when and the outcome. Leave out passwords, tokens and codes."],
+  ["Give every non-human identity an owner", "Service accounts and API clients need a named owner, a purpose and an expiry review."],
+  ["Signed is not secret", "Anyone can read a signed token. Verify every signature and keep sensitive data out of tokens."],
+  ["Guard the keys as closely as the data", "Whoever can use a signing or encryption key holds the power it protects."],
+  ["Learn the standard, then the product", "OAuth, OIDC, SAML, SCIM and FIDO2 carry across every ecosystem; product names change."]
+];
+
+document.getElementById("vocab").innerHTML = VOCAB.map(([n, a, p, d]) =>
+  `<div class="term"><div class="name">${n}${a ? `<span class="abbr">${a}</span>` : ""}</div><p>${p}</p><div class="draw">${d}</div></div>`).join("");
+
+document.getElementById("pats").innerHTML = PATS.map(p =>
+  `<article class="pat"><h3>${p.n}</h3><div class="std">${p.s}</div><p class="use">${p.u}</p><ol>${p.steps.map(s => `<li>${s}</li>`).join("")}</ol><div class="watch"><b>Watch for</b>${p.w}</div></article>`).join("");
+
+document.getElementById("take").innerHTML = TAKE.map(([b, s]) => `<div><b>${b}</b><span>${s}</span></div>`).join("");
+
+const q = document.getElementById("q");
+function renderRows() {
+  const term = q.value.trim().toLowerCase();
+  const list = ROWS.filter(r => !term || JSON.stringify(r).toLowerCase().includes(term));
+  document.getElementById("rows").innerHTML = list.length ? list.map(r => `<div class="row">
+      <div class="gen"><b>${r.c}</b><span>${r.h}</span></div>
+      <div><span class="vlbl">Okta</span>${r.o}</div>
+      <div><span class="vlbl">Microsoft Entra / Azure</span>${r.e}</div>
+      <div><span class="vlbl">AWS</span>${r.a}</div>
+      <div class="diff"><span class="vlbl">Key difference</span>${r.d}</div>
+    </div>`).join("") : `<div class="empty">No rows match. Clear the search to see all concepts.</div>`;
+  document.getElementById("count").textContent = list.length + " of " + ROWS.length + " concepts";
+}
+q.addEventListener("input", renderRows);
+renderRows();
+</script>
+
+</body>
+</html>
