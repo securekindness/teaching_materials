@@ -154,6 +154,8 @@ svg #arr path { fill: var(--ink); }
 .row .gen b { display: block; font-size: 15px; }
 .row .gen span { font-size: 13px; color: var(--muted); }
 .row .diff { background: var(--accent-soft); font-size: 13.5px; }
+.vis { display: block; margin-top: 8px; font-family: var(--mono); font-size: 12px; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.vis:hover { text-decoration-thickness: 2px; }
 .vlbl { display: none; }
 .empty { padding: 24px 14px; color: var(--muted); }
 
@@ -463,10 +465,10 @@ const ROWS = [
   { c:"Customer identity (CIAM)", h:"Your product's external users",
     o:"Auth0", e:"Entra External ID", a:"Amazon Cognito user pools",
     d:"All three run customer identity as a product separate from workforce identity, with different admin models and pricing." },
-  { c:"Application object", h:"How an app is registered for sign-in",
+  { c:"Application object", v:["Entra: app object and service principals","https://learn.microsoft.com/en-us/entra/identity-platform/app-objects-and-service-principals"], h:"How an app is registered for sign-in",
     o:"App integration (SAML or OIDC)", e:"App registration (global definition) plus enterprise application / service principal (instance in each tenant)", a:"Cognito app client; for AWS console access, a permission set",
     d:"Entra's two-object model surprises newcomers: one definition, one service principal per tenant that uses it." },
-  { c:"Federation direction", h:"Who vouches for whom",
+  { c:"Federation direction", v:["AWS: SAML federation for temporary credentials","https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_saml.html"], h:"Who vouches for whom",
     o:"Commonly the IdP; also accepts inbound IdPs", e:"Commonly the IdP; B2B federation accepts partner IdPs", a:"Usually the service provider: Identity Center or IAM trusts an external IdP",
     d:"In a mixed environment, Okta or Entra typically signs people in and AWS trusts that assertion." },
   { c:"Groups", h:"Collections used to grant access",
@@ -478,10 +480,10 @@ const ROWS = [
   { c:"Permission definition", h:"How allowed actions are expressed",
     o:"Admin role permissions over resource sets; app policy configured in console", e:"Role definitions (actions, data actions) assigned at a scope", a:"JSON policy documents: effect, action, resource, condition",
     d:"AWS policies are written as code and attached. Azure role definitions are assigned to a principal at a scope." },
-  { c:"Policy evaluation", h:"How a final answer is reached",
+  { c:"Policy evaluation", v:["AWS: how policy types combine","https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"], h:"How a final answer is reached",
     o:"Policy rules evaluated in priority order; first match applies", e:"Azure RBAC is additive across assignments; deny assignments are rare and system-managed", a:"Default deny; explicit deny overrides any allow; organization policies and permission boundaries cap the maximum",
     d:"Ordered rules, union of grants, and deny-wins produce different results from similar-looking configurations." },
-  { c:"Sign-in policy", h:"Context rules applied at authentication",
+  { c:"Sign-in policy", v:["Entra: Conditional Access signals, decision, enforcement","https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview"], h:"Context rules applied at authentication",
     o:"Global session policy and app authentication policies", e:"Conditional Access", a:"No central sign-in policy; IAM condition keys plus whatever the IdP enforces",
     d:"For AWS, device and location rules are usually set at the upstream IdP." },
   { c:"MFA and authenticators", h:"Second factors and passwordless",
@@ -490,7 +492,7 @@ const ROWS = [
   { c:"Credentials issued", h:"What a signed-in principal carries",
     o:"OIDC and OAuth tokens from org or custom authorization servers", e:"Tokens from the Microsoft identity platform", a:"STS temporary credentials used to sign each request (SigV4)",
     d:"OAuth tokens are bearer credentials sent with each call. AWS keys sign the request and the secret never crosses the wire." },
-  { c:"Protecting your own API", h:"Issuing scopes for an API you build",
+  { c:"Protecting your own API", v:["Okta: OAuth 2.0 and OIDC flow diagrams","https://developer.okta.com/docs/concepts/oauth-openid/"], h:"Issuing scopes for an API you build",
     o:"Custom authorization server with scopes and claims", e:"App registration that exposes an API with scopes and app roles", a:"Cognito resource servers; API Gateway authorizers",
     d:"Okta and Entra mint tokens for your API. AWS commonly validates tokens at the gateway." },
   { c:"Machine identity", h:"Identity for running software",
@@ -551,7 +553,7 @@ function renderRows() {
       <div><span class="vlbl">Okta</span>${r.o}</div>
       <div><span class="vlbl">Microsoft Entra / Azure</span>${r.e}</div>
       <div><span class="vlbl">AWS</span>${r.a}</div>
-      <div class="diff"><span class="vlbl">Key difference</span>${r.d}</div>
+      <div class="diff"><span class="vlbl">Key difference</span>${r.d}${r.v ? `<a class="vis" href="${r.v[1]}" target="_blank" rel="noopener">See it: ${r.v[0]} ↗</a>` : ""}</div>
     </div>`).join("") : `<div class="empty">No rows match. Clear the search to see all concepts.</div>`;
   document.getElementById("count").textContent = list.length + " of " + ROWS.length + " concepts";
 }
